@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Users - Task Management System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body onload="loadUsers()">
+
+    <div class="container">
+        <h1>Task Management System</h1>
+        <div class="nav">
+            <a href="users.html">Users</a>
+            <a href="tasks.html">Tasks</a>
+            <a href="add-task.html">Add Task</a>
+            <a href="dashboard.html">Dashboard</a>
+        </div>
+        <h2>Users</h2>
+
+        <div class="card">
+            <h3>Add New User</h3>
+
+            <input type="text" id="userName" placeholder="Enter user name">
+            <input type="email" id="email" placeholder="Enter email">
+
+            <button onclick="addUser()">Add User</button>
+
+            <div id="message"></div>
+        </div>
+
+        <div class="card">
+            <h3>User List</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>User ID</th>
+                        <th>User Name</th>
+                        <th>Email</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

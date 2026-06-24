@@ -31,6 +31,8 @@ namespace TaskManagementAPI
 
             app.UseHttpsRedirection();
 
+            app.UseStaticFiles();
+
             app.UseAuthorization();
 
 
