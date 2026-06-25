@@ -2,11 +2,14 @@
 <html>
 
 <head>
+    <meta charset="UTF-8">
     <title>Users - Task Management System</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body onload="loadUsers()">
+
+    
 
     <div class="container">
         <h1>Task Management System</h1>
@@ -15,6 +18,9 @@
             <a href="tasks.html">Tasks</a>
             <a href="add-task.html">Add Task</a>
             <a href="dashboard.html">Dashboard</a>
+            <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn" title="Change Theme">
+                <span id="themeIcon">☾</span>
+            </button>
         </div>
         <h2>Users</h2>
 
@@ -47,7 +53,8 @@
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=21"></script>
+    <link rel="stylesheet" href="style.css?v=21">
 </body>
 
 </html>

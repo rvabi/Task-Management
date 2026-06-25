@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Add Task - Task Management System</title>
+    <title>Edit Task - Task Management System</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body onload="populateUserDropdown()">
+<body onload="loadEditTaskPage()">
 
     <div class="container">
         <h1>Task Management System</h1>
@@ -17,36 +17,38 @@
             
         </div>
 
-        <h2>Add New Task</h2>
+        <h2>Edit Task</h2>
 
         <div class="card">
-            <h3>Task Details</h3>
+            <h3>Update Task Details</h3>
+
+            <input type="hidden" id="taskId">
 
             <label>Task Title</label>
-            <input type="text" id="title" placeholder="Enter task title">
+            <input type="text" id="editTitle" placeholder="Enter task title">
 
             <label>Description</label>
-            <textarea id="description" placeholder="Enter task description"></textarea>
+            <textarea id="editDescription" placeholder="Enter task description"></textarea>
 
             <label>Status</label>
-            <select id="status">
+            <select id="editStatus">
                 <option value="Todo">Todo</option>
                 <option value="In Progress">In Progress</option>
                 <option value="Done">Done</option>
             </select>
 
             <label>Assign User</label>
-            <select id="userId">
+            <select id="editUserId">
                 <option value="">Loading users...</option>
             </select>
 
-            <button onclick="addTask()">Create Task</button>
+            <button onclick="updateTask()">Update Task</button>
             <a href="tasks.html" class="cancel-link">Back to Tasks</a>
 
             <div id="message"></div>
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=10"></script>
 </body>
 </html>

@@ -113,7 +113,10 @@ namespace TaskManagementAPI.Repositories
                     u.UserName
                 FROM Tasks t
                 INNER JOIN Users u ON t.UserId = u.UserId
-                WHERE t.Title LIKE @Name
+                WHERE 
+                     t.Title LIKE @Name
+                     OR t.Description LIKE @Name
+                     OR u.UserName LIKE @Name
                 ORDER BY t.TaskId DESC";
 
             using var command = new SqlCommand(sql, connection);

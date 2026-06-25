@@ -165,7 +165,7 @@ async function searchTasks() {
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/api/tasks/search?name=${encodeURIComponent(keyword)}`);
+        const response = await fetch(`/api/tasks/search?name=${encodeURIComponent(keyword)}`);
         const result = await response.json();
 
         renderTasks(result);
@@ -319,3 +319,303 @@ async function addTask() {
         showMessage("Error creating task.", false);
     }
 }
+function getQueryStringValue(name) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(name);
+}
+
+async function loadEditTaskPage() {
+    const taskId = getQueryStringValue("id");
+
+    if (!taskId) {
+        showMessage("Task ID is missing. Please open this page from the task list Edit button.", false);
+        return;
+    }
+
+    const taskIdInput = document.getElementById("taskId");
+    if (taskIdInput) {
+        taskIdInput.value = taskId;
+    }
+
+    await populateEditUserDropdown();
+    await getTaskById(taskId);
+}
+
+async function populateEditUserDropdown() {
+    const userDropdown = document.getElementById("editUserId");
+
+    if (!userDropdown) return;
+
+    userDropdown.innerHTML = "<option value=''>Loading users...</option>";
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/users`);
+        const result = await response.json();
+
+        userDropdown.innerHTML = "<option value=''>Select user</option>";
+
+        if (!result.success) {
+            userDropdown.innerHTML = "<option value=''>Error loading users</option>";
+            return;
+        }
+
+        result.data.forEach(user => {
+            const option = document.createElement("option");
+            option.value = user.userId;
+            option.textContent = `${user.userName} (${user.email})`;
+            userDropdown.appendChild(option);
+        });
+
+    } catch (error) {
+        userDropdown.innerHTML = "<option value=''>Error loading users</option>";
+        showMessage("Error loading users.", false);
+    }
+}
+
+async function getTaskById(id) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/tasks/${id}`);
+        const result = await response.json();
+
+        if (!result.success) {
+            showMessage(result.message, false);
+            return;
+        }
+
+        const task = result.data;
+
+        document.getElementById("editTitle").value = task.title;
+        document.getElementById("editDescription").value = task.description ?? "";
+        document.getElementById("editStatus").value = task.status;
+        document.getElementById("editUserId").value = task.userId;
+
+    } catch (error) {
+        showMessage("Error loading task details.", false);
+    }
+}
+
+async function updateTask() {
+    const taskId = document.getElementById("taskId").value;
+    const title = document.getElementById("editTitle").value.trim();
+    const description = document.getElementById("editDescription").value.trim();
+    const status = document.getElementById("editStatus").value;
+    const userId = document.getElementById("editUserId").value;
+
+    if (title === "") {
+        showMessage("Task title is required.", false);
+        return;
+    }
+
+    if (userId === "") {
+        showMessage("Please select a user.", false);
+        return;
+    }
+
+    const task = {
+        title: title,
+        description: description,
+        status: status,
+        userId: parseInt(userId)
+    };
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(task)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showMessage(result.message, true);
+
+            setTimeout(() => {
+                window.location.href = "tasks.html";
+            }, 1000);
+        } else {
+            showMessage(result.errors.join("<br>"), false);
+        }
+
+    } catch (error) {
+        showMessage("Error updating task.", false);
+    }
+}
+
+async function loadDashboard() {
+    const totalTasksElement = document.getElementById("totalTasks");
+    const todoTasksElement = document.getElementById("todoTasks");
+    const inProgressTasksElement = document.getElementById("inProgressTasks");
+    const doneTasksElement = document.getElementById("doneTasks");
+    const dashboardTaskBody = document.getElementById("dashboardTaskBody");
+
+    if (!totalTasksElement) return;
+
+    try {
+        const response = await fetch("/api/tasks");
+        const result = await response.json();
+
+        if (!result.success) {
+            showMessage(result.message, false);
+            return;
+        }
+
+        const tasks = result.data;
+
+        const totalTasks = tasks.length;
+        const todoTasks = tasks.filter(task => task.status === "Todo").length;
+        const inProgressTasks = tasks.filter(task => task.status === "In Progress").length;
+        const doneTasks = tasks.filter(task => task.status === "Done").length;
+
+        totalTasksElement.textContent = totalTasks;
+        todoTasksElement.textContent = todoTasks;
+        inProgressTasksElement.textContent = inProgressTasks;
+        doneTasksElement.textContent = doneTasks;
+
+        dashboardTaskBody.innerHTML = "";
+
+        if (tasks.length === 0) {
+            dashboardTaskBody.innerHTML = "<tr><td colspan='5'>No tasks found.</td></tr>";
+            return;
+        }
+
+        const recentTasks = tasks.slice(0, 5);
+
+        recentTasks.forEach(task => {
+            const createdDate = new Date(task.createdDate).toLocaleDateString();
+
+            const row = `
+                <tr>
+                    <td>${task.taskId}</td>
+                    <td>${task.title}</td>
+                    <td>${task.status}</td>
+                    <td>${task.userName}</td>
+                    <td>${createdDate}</td>
+                </tr>
+            `;
+
+            dashboardTaskBody.innerHTML += row;
+        });
+
+    } catch (error) {
+        showMessage("Error loading dashboard.", false);
+
+        if (dashboardTaskBody) {
+            dashboardTaskBody.innerHTML = "<tr><td colspan='5'>Error loading recent tasks.</td></tr>";
+        }
+    }
+}
+
+async function loadUserDetailPage() {
+    const userId = getQueryStringValue("id");
+
+    if (!userId) {
+        showMessage("User ID is missing. Please open this page from Users page.", false);
+        return;
+    }
+
+    await getUserWithTasks(userId);
+}
+
+async function getUserWithTasks(id) {
+    const taskTableBody = document.getElementById("userTaskTableBody");
+
+    if (taskTableBody) {
+        taskTableBody.innerHTML = "<tr><td colspan='5'>Loading tasks...</td></tr>";
+    }
+
+    try {
+        const response = await fetch(`/api/users/${id}/tasks`);
+        const result = await response.json();
+
+        if (!result.success) {
+            showMessage(result.message, false);
+
+            if (taskTableBody) {
+                taskTableBody.innerHTML = "<tr><td colspan='5'>No data found.</td></tr>";
+            }
+
+            return;
+        }
+
+        const user = result.data;
+
+        document.getElementById("detailUserId").textContent = user.userId;
+        document.getElementById("detailUserName").textContent = user.userName;
+        document.getElementById("detailEmail").textContent = user.email;
+
+        renderUserTasks(user.tasks);
+
+    } catch (error) {
+        showMessage("Error loading user details.", false);
+
+        if (taskTableBody) {
+            taskTableBody.innerHTML = "<tr><td colspan='5'>Error loading tasks.</td></tr>";
+        }
+    }
+}
+
+function renderUserTasks(tasks) {
+    const taskTableBody = document.getElementById("userTaskTableBody");
+
+    if (!taskTableBody) return;
+
+    taskTableBody.innerHTML = "";
+
+    if (!tasks || tasks.length === 0) {
+        taskTableBody.innerHTML = "<tr><td colspan='5'>This user has no assigned tasks.</td></tr>";
+        return;
+    }
+
+    tasks.forEach(task => {
+        const createdDate = new Date(task.createdDate).toLocaleDateString();
+
+        const row = `
+            <tr>
+                <td>${task.taskId}</td>
+                <td>${task.title}</td>
+                <td>${task.description ?? ""}</td>
+                <td>${task.status}</td>
+                <td>${createdDate}</td>
+            </tr>
+        `;
+
+        taskTableBody.innerHTML += row;
+    });
+}
+
+function setThemeIcon() {
+    const themeIcon = document.getElementById("themeIcon");
+
+    if (!themeIcon) return;
+
+    if (document.body.classList.contains("dark")) {
+        themeIcon.textContent = "☀";
+    } else {
+        themeIcon.textContent = "☾";
+    }
+}
+
+function toggleTheme() {
+    document.body.classList.toggle("dark");
+
+    if (document.body.classList.contains("dark")) {
+        localStorage.setItem("theme", "dark");
+    } else {
+        localStorage.setItem("theme", "light");
+    }
+
+    setThemeIcon();
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+    const savedTheme = localStorage.getItem("theme");
+
+    if (savedTheme === "dark") {
+        document.body.classList.add("dark");
+    }
+
+    setThemeIcon();
+});
